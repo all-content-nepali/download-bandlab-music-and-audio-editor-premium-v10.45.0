@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Logo Maker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+        .controls {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .controls div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<script>
+let undoStack = [];
+let redoStack = [];
+
+function saveState() {
+    const canvas = document.getElementById('logoCanvas');
+    undoStack.push(canvas.toDataURL());
+    redoStack = [];
+}
+
+function undo() {
+    if (undoStack.length > 0) {
+        const canvas = document.getElementById('logoCanvas');
+        const ctx = canvas.getContext('2d');
+        redoStack.push(canvas.toDataURL());
+        const img = new Image();
+        img.src = undoStack.pop();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+    }
+}
+
+function redo() {
+    if (redoStack.length > 0) {
+        const canvas = document.getElementById('logoCanvas');
+        const ctx = canvas.getContext('2d');
+        undoStack.push(canvas.toDataURL());
+        const img = new Image();
+        img.src = redoStack.pop();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+    }
+}
+
+function drawLogo() {
+    saveState();
+    const canvas = document.getElementById('logoCanvas');
+    const ctx = canvas.getContext('2d');
+    const logoText = document.getElementById('logoText').value;
+    const fontSize = document.getElementById('fontSize').value;
+    const fontStyle = document.getElementById('fontStyle').value;
+    const fontColor = document.getElementById('fontColor').value;
+    const bgColor = document.getElementById('bgColor').value;
+    const shadowColor = document.getElementById('shadowColor').value;
+    const shadowBlur = document.getElementById('shadowBlur').value;
+    const textX = document.getElementById('textX').value;
+    const textY = document.getElementById('textY').value;
+    const fontWeight = document.getElementById('fontWeight').value;
+    const textRotation = document.getElementById('textRotation').value;
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Set background color
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Set the text properties
+    ctx.font = `${fontWeight} ${fontSize}px ${fontStyle}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = fontColor;
+
+    // Set shadow properties
+    ctx.shadowColor = shadowColor;
+    ctx.shadowBlur = shadowBlur;
+
+    // Draw the text
+    ctx.save();
+    ctx.translate(textX, textY);
+    ctx.rotate(textRotation * Math.PI / 180);
+    ctx.fillText(logoText, 0, 0);
+    ctx.restore();
+}
+
+function addShape(shape) {
+    saveState();
+    const canvas = document.getElementById('logoCanvas');
+    const ctx = canvas.getContext('2d');
+    const shapeColor = document.getElementById('shapeColor').value;
+    const shapeX = document.getElementById('shapeX').value;
+    const shapeY = document.getElementById('shapeY').value;
+    const shapeWidth = document.getElementById('shapeWidth').value;
+    const shapeHeight = document.getElementById('shapeHeight').value;
+
+    ctx.fillStyle = shapeColor;
+    switch (shape) {
+        case 'rectangle':
+            ctx.fillRect(shapeX, shapeY, shapeWidth, shapeHeight);
+            break;
+        case 'circle':
+            ctx.beginPath();
+            ctx.arc(shapeX, shapeY, shapeWidth / 2, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+        case 'triangle':
+            ctx.beginPath();
+            ctx.moveTo(shapeX, shapeY);
+            ctx.lineTo(shapeX + shapeWidth / 2, shapeY - shapeHeight);
+            ctx.lineTo(shapeX + shapeWidth, shapeY);
+            ctx.closePath();
+            ctx.fill();
+            break;
+        case 'star':
+            drawStar(ctx, shapeX, shapeY, 5, shapeWidth / 2, shapeWidth / 4);
+            break;
+    }
+}
+
+function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    let step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius)
+    for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy - Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y)
+        rot += step
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy - Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y)
+        rot += step
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function addImage() {
+    saveState();
+    const canvas = document.getElementById('logoCanvas');
+    const ctx = canvas.getContext('2d');
+    const imgFile = document.getElementById('imgFile').files[0];
+    const imgX = document.getElementById('imgX').value;
+    const imgY = document.getElementById('imgY').value;
+    const imgWidth = document.getElementById('imgWidth').value;
+    const imgHeight = document.getElementById('imgHeight').value;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+    };
+    reader.readAsDataURL(imgFile);
+}
+
+function downloadLogo() {
+    const canvas = document.getElementById('logoCanvas');
+    const link = document.createElement('a');
+    link.download = 'logo.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+</script>
+    <h1>Advanced Logo Maker</h1>
+    <div class="controls">
+        <div>
+            <label for="logoText">Logo Text: </label>
+            <input type="text" id="logoText" placeholder="Enter your logo text">
+        </div>
+        <div>
+            <label for="fontSize">Font Size: </label>
+            <input type="number" id="fontSize" value="48">
+        </div>
+        <div>
+            <label for="fontStyle">Font Style: </label>
+            <select id="fontStyle">
+                <option value="serif">Serif</option>
+                <option value="sans-serif">Sans-Serif</option>
+                <option value="monospace">Monospace</option>
+                <option value="cursive">Cursive</option>
+                <option value="fantasy">Fantasy</option>
+            </select>
+        </div>
+        <div>
+            <label for="fontColor">Font Color: </label>
+            <input type="color" id="fontColor" value="#0000FF">
+        </div>
+        <div>
+            <label for="bgColor">Background Color: </label>
+            <input type="color" id="bgColor" value="#FFFFFF">
+        </div>
+        <div>
+            <label for="shadowColor">Shadow Color: </label>
+            <input type="color" id="shadowColor" value="#000000">
+        </div>
+        <div>
+            <label for="shadowBlur">Shadow Blur: </label>
+            <input type="number" id="shadowBlur" value="10">
+        </div>
+        <div>
+            <label for="textX">Text X: </label>
+            <input type="number" id="textX" value="200">
+        </div>
+        <div>
+            <label for="textY">Text Y: </label>
+            <input type="number" id="textY" value="100">
+        </div>
+        <div>
+            <label for="fontWeight">Font Weight: </label>
+            <select id="fontWeight">
+                <option value="normal">Normal</option>
+                <option value="bold">Bold</option>
+                <option value="bolder">Bolder</option>
+                <option value="lighter">Lighter</option>
+            </select>
+        </div>
+        <div>
+            <label for="textRotation">Text Rotation (degrees): </label>
+            <input type="number" id="textRotation" value="0">
+        </div>
+        <div>
+            <label for="shapeColor">Shape Color: </label>
+            <input type="color" id="shapeColor" value="#FF0000">
+        </div>
+        <div>
+            <label for="shapeX">Shape X: </label>
+            <input type="number" id="shapeX" value="50">
+        </div>
+        <div>
+            <label for="shapeY">Shape Y: </label>
+            <input type="number" id="shapeY" value="50">
+        </div>
+        <div>
+            <label for="shapeWidth">Shape Width: </label>
+            <input type="number" id="shapeWidth" value="100">
+        </div>
+        <div>
+            <label for="shapeHeight">Shape Height: </label>
+            <input type="number" id="shapeHeight" value="100">
+        </div>
+        <div>
+            <label for="imgFile">Upload Image: </label>
+            <input type="file" id="imgFile" accept="image/*">
+        </div>
+        <div>
+            <label for="imgX">Image X: </label>
+            <input type="number" id="imgX" value="150">
+        </div>
+        <div>
+            <label for="imgY">Image Y: </label>
+            <input type="number" id="imgY" value="150">
+        </div>
+        <div>
+            <label for="imgWidth">Image Width: </label>
+            <input type="number" id="imgWidth" value="100">
+        </div>
+        <div>
+            <label for="imgHeight">Image Height: </label>
+            <input type="number" id="imgHeight" value="100">
+        </div>
+    </div>
+    <canvas id="logoCanvas" width="400" height="200"></canvas>
+    <div>
+        <button onclick="drawLogo()">Generate Logo</button>
+        <button onclick="addShape('rectangle')">Add Rectangle</button>
+        <button onclick="addShape('circle')">Add Circle</button>
+        <button onclick="addShape('triangle')">Add Triangle</button>
+        <button onclick="addShape('star')">Add Star</button>
+        <button onclick="addImage()">Add Image</button>
+        <button onclick="downloadLogo()">Download Logo</button>
+        <button onclick="undo()">Undo</button>
+        <button onclick="redo()">Redo</button>
+    </div>
+</body>
+</html>
